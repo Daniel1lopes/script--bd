@@ -1,0 +1,77 @@
+-- Consulta Datas Disponíveis --
+DECLARE @idServicoUnidadeAtendimento INT
+SET @idServicoUnidadeAtendimento = 11
+SELECT DISTINCT
+	A.dtAgenda 
+FROM 
+	CACTB.Agenda A
+	INNER JOIN CACTB.ServicoUnidadeAtendimento SUA
+		ON SUA.idServicoUnidadeAtendimento = A.idServicoUnidadeAtendimento
+	LEFT JOIN (SELECT 
+					idAgenda
+					,COUNT(1) AS nuQtdeAgendamento
+				FROM 
+					CACTB.Agendamento
+				GROUP BY
+					idAgenda) AS QA
+		ON QA.idAgenda = A.idAgenda
+WHERE
+	A.idServicoUnidadeAtendimento = @idServicoUnidadeAtendimento
+--	SUA.idServico = @idServico AND SUA.idUnidadeAtendimento = @idUnidadeAtendimento
+	AND (A.nuVagas - A.nuReserva - ISNULL(QA.nuQtdeAgendamento,0)) > 0
+
+-- Consulta Horários Disponíveis -- 
+DECLARE @dtReferencia DATE
+DECLARE @idServicoUnidadeAtendimento INT
+SET @dtReferencia = '2023-09-21'
+SET @idServicoUnidadeAtendimento = 11
+
+SELECT 
+	A.dtAgenda
+	,A.hrInicio
+	,A.hrFim
+	,S.nmServico
+	,UA.nmUnidadeAtendimento
+	,E.nmEspecialidade
+	,CA.nmCentroAtendimento
+	,(A.nuVagas - A.nuReserva - ISNULL(QA.nuQtdeAgendamento,0)) AS nuQtdeDisponivel
+FROM 
+	CACTB.Agenda A
+	INNER JOIN CACTB.ServicoUnidadeAtendimento SUA
+		ON SUA.idServicoUnidadeAtendimento = A.idServicoUnidadeAtendimento
+	INNER JOIN CACTB.UnidadeAtendimento UA
+		ON UA.idUnidadeAtendimento = SUA.idUnidadeAtendimento
+	INNER JOIN CACTB.Servico S
+		ON S.idServico = SUA.idServico
+	INNER JOIN CACTB.Especialidade E
+		ON E.idEspecialidade = S.idEspecialidade
+	INNER JOIN CACTB.CentroAtendimento CA
+		ON CA.idCentroAtendimento = E.idCentroAtendimento
+	LEFT JOIN (SELECT 
+					idAgenda
+					,COUNT(1) AS nuQtdeAgendamento
+				FROM 
+					CACTB.Agendamento
+				WHERE
+					icAtivo = 1
+				GROUP BY
+					idAgenda) AS QA
+		ON QA.idAgenda = A.idAgenda
+WHERE 
+	A.dtAgenda = @dtReferencia
+	AND A.idServicoUnidadeAtendimento = @idServicoUnidadeAtendimento
+	
+INSERT INTO CACTB.Agendamento
+(dtAgendamento
+,icAtivo
+,idAgenda
+,idPessoa)
+VALUES
+(GETDATE()
+,1
+,44
+,2)
+
+SELECT * FROM CACTB.Agendamento
+
+select * from cactb.pessoa
